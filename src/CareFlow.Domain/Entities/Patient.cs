@@ -1,9 +1,9 @@
+using CareFlow.Domain.Common;
+
 namespace CareFlow.Domain.Entities;
 
-public class Patient
+public class Patient : BaseEntity
 {
-    public Guid Id { get; set; }
-
     public string Name { get; set; } = string.Empty;
 
     public DateTime BirthDate { get; set; }
@@ -18,5 +18,7 @@ public class Patient
 
     public string EmergencyContact { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    // Relacionamento
+    public ICollection<TaskItem> Tasks { get; set; }
+        = new List<TaskItem>();
 }

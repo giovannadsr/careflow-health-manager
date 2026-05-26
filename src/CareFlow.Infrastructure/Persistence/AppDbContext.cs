@@ -15,4 +15,17 @@ public class AppDbContext : DbContext
     public DbSet<Patient> Patients => Set<Patient>();
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        modelBuilder.Entity<Patient>()
+            .HasIndex(p => p.CPF)
+            .IsUnique();
+    }
 }
