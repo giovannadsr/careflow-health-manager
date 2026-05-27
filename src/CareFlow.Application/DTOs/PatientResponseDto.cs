@@ -1,6 +1,6 @@
-namespace CareFlow.Domain.Entities;
+namespace CareFlow.Application.DTOs.Patients;
 
-public class Patient
+public class PatientResponseDto
 {
     public Guid Id { get; set; }
 
@@ -10,15 +10,7 @@ public class Patient
 
     public string Gender { get; set; } = string.Empty;
 
-    public string CPF { get; set; } = string.Empty;
-
     public string MedicalRecordNumber { get; set; } = string.Empty;
 
     public string Diagnosis { get; set; } = string.Empty;
-
-    public string PhoneNumber { get; set; } = string.Empty;
-
-    public string EmergencyContact { get; set; } = string.Empty;
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
