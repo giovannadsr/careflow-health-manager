@@ -1,6 +1,7 @@
 using CareFlow.Application.DTOs.Auth;
 using CareFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CareFlow.Api.Controllers;
 
@@ -16,6 +17,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register(
         RegisterRequestDto request)
     {
@@ -25,6 +27,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login(
         LoginRequestDto request)
     {
