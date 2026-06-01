@@ -29,6 +29,8 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
 

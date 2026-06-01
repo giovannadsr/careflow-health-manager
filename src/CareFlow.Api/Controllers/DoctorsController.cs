@@ -1,34 +1,30 @@
 using CareFlow.Application.DTOs.Doctors;
-using CareFlow.Domain.Entities;
-using CareFlow.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authorization;
+using CareFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class DoctorsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IDoctorService _service;
 
-    public DoctorsController(AppDbContext context)
+    public DoctorsController(IDoctorService service)
     {
-        _context = context;
+        _service = service;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        return Ok(await _context.Doctors.ToListAsync());
+        return Ok(await _service.GetAllAsync());
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var doctor = await _context.Doctors.FindAsync(id);
+        var doctor = await _service.GetByIdAsync(id);
 
         if (doctor == null)
             return NotFound();
@@ -39,16 +35,7 @@ public class DoctorsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateDoctorDto dto)
     {
-        var doctor = new Doctor
-        {
-            FullName = dto.FullName,
-            CRM = dto.CRM,
-            Specialty = dto.Specialty
-        };
-
-        _context.Doctors.Add(doctor);
-
-        await _context.SaveChangesAsync();
+        var doctor = await _service.CreateAsync(dto);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -61,15 +48,7 @@ public class DoctorsController : ControllerBase
         Guid id,
         UpdateDoctorDto dto)
     {
-        var doctor = await _context.Doctors.FindAsync(id);
-
-        if (doctor == null)
-            return NotFound();
-
-        doctor.FullName = dto.FullName;
-        doctor.Specialty = dto.Specialty;
-
-        await _context.SaveChangesAsync();
+        await _service.UpdateAsync(id, dto);
 
         return NoContent();
     }
@@ -77,14 +56,7 @@ public class DoctorsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var doctor = await _context.Doctors.FindAsync(id);
-
-        if (doctor == null)
-            return NotFound();
-
-        doctor.IsActive = false;
-
-        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(id);
 
         return NoContent();
     }
