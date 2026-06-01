@@ -14,6 +14,10 @@ public class AppDbContext : DbContext
 
     public DbSet<Patient> Patients => Set<Patient>();
 
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,5 +31,19 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Patient>()
             .HasIndex(p => p.CPF)
             .IsUnique();
+
+        modelBuilder.Entity<Doctor>()
+            .HasIndex(d => d.CRM)
+            .IsUnique();
+
+        modelBuilder.Entity<Appointment>()
+            .HasOne(a => a.Patient)
+            .WithMany()
+            .HasForeignKey(a => a.PatientId);
+
+        modelBuilder.Entity<Appointment>()
+            .HasOne(a => a.Doctor)
+            .WithMany()
+            .HasForeignKey(a => a.DoctorId);
     }
 }

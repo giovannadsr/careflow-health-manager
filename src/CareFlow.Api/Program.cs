@@ -6,11 +6,17 @@ using Microsoft.IdentityModel.Tokens;
 using CareFlow.Application.Interfaces;
 using CareFlow.Infrastructure.Services;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter());
+    });
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -20,6 +26,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IPatientService, PatientService>();
+
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
