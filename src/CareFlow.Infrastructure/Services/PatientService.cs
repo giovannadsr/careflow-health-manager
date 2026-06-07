@@ -24,8 +24,11 @@ public class PatientService : IPatientService
                 FullName = x.FullName,
                 BirthDate = x.BirthDate,
                 Gender = x.Gender,
+                CPF = x.CPF,
                 MedicalRecordNumber = x.MedicalRecordNumber,
-                Diagnosis = x.Diagnosis
+                Diagnosis = x.Diagnosis,
+                PhoneNumber = x.PhoneNumber,
+                EmergencyContact = x.EmergencyContact
             })
             .ToListAsync();
     }
@@ -43,8 +46,11 @@ public class PatientService : IPatientService
             FullName = patient.FullName,
             BirthDate = patient.BirthDate,
             Gender = patient.Gender,
+            CPF = patient.CPF,
             MedicalRecordNumber = patient.MedicalRecordNumber,
-            Diagnosis = patient.Diagnosis
+            Diagnosis = patient.Diagnosis,
+            PhoneNumber = patient.PhoneNumber,
+            EmergencyContact = patient.EmergencyContact
         };
     }
 
@@ -52,11 +58,15 @@ public class PatientService : IPatientService
     {
         var patient = new Patient
         {
+            Id = Guid.NewGuid(),
             FullName = dto.FullName,
             BirthDate = dto.BirthDate,
             Gender = dto.Gender,
+            CPF = dto.CPF,
             MedicalRecordNumber = dto.MedicalRecordNumber,
-            Diagnosis = dto.Diagnosis
+            Diagnosis = dto.Diagnosis,
+            PhoneNumber = dto.PhoneNumber,
+            EmergencyContact = dto.EmergencyContact
         };
 
         _context.Patients.Add(patient);
@@ -69,8 +79,11 @@ public class PatientService : IPatientService
             FullName = patient.FullName,
             BirthDate = patient.BirthDate,
             Gender = patient.Gender,
+            CPF = patient.CPF,
             MedicalRecordNumber = patient.MedicalRecordNumber,
-            Diagnosis = patient.Diagnosis
+            Diagnosis = patient.Diagnosis,
+            PhoneNumber = patient.PhoneNumber,
+            EmergencyContact = patient.EmergencyContact
         };
     }
 

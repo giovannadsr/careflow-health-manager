@@ -1,9 +1,11 @@
 using CareFlow.Application.DTOs.Appointments;
 using CareFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CareFlow.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AppointmentsController : ControllerBase
@@ -15,12 +17,14 @@ public class AppointmentsController : ControllerBase
         _service = service;
     }
 
+    [Authorize(Roles = "Admin, Doctor, Recepcionist")]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         return Ok(await _service.GetAllAsync());
     }
 
+    [Authorize(Roles = "Admin, Doctor, Recepcionist")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -32,6 +36,8 @@ public class AppointmentsController : ControllerBase
         return Ok(appointment);
     }
 
+
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPost]
     public async Task<IActionResult> Create(CreateAppointmentDto dto)
     {
@@ -43,6 +49,7 @@ public class AppointmentsController : ControllerBase
             appointment);
     }
 
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, UpdateAppointmentDto dto)
     {
@@ -51,6 +58,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPatch("{id}/confirm")]
     public async Task<IActionResult> Confirm(Guid id)
     {
@@ -59,6 +67,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin, Doctor")]
     [HttpPatch("{id}/start")]
     public async Task<IActionResult> Start(Guid id)
     {
@@ -67,6 +76,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin, Doctor")]
     [HttpPatch("{id}/complete")]
     public async Task<IActionResult> Complete(Guid id)
     {
@@ -75,6 +85,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPatch("{id}/cancel")]
     public async Task<IActionResult> Cancel(Guid id)
     {
@@ -83,6 +94,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {

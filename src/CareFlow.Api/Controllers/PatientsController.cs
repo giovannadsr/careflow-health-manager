@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CareFlow.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class PatientsController : ControllerBase
 {
     private readonly IPatientService _service;
@@ -17,12 +17,14 @@ public class PatientsController : ControllerBase
         _service = service;
     }
 
+    [Authorize(Roles = "Admin, Doctor, Recepcionist")]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         return Ok(await _service.GetAllAsync());
     }
 
+    [Authorize(Roles = "Admin, Doctor, Recepcionist")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -34,6 +36,8 @@ public class PatientsController : ControllerBase
         return Ok(patient);
     }
 
+
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPost]
     public async Task<IActionResult> Create(CreatePatientDto dto)
     {
@@ -42,6 +46,7 @@ public class PatientsController : ControllerBase
         return Ok(patient);
     }
 
+    [Authorize(Roles = "Admin, Recepcionist")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -52,6 +57,7 @@ public class PatientsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {

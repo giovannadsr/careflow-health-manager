@@ -9,6 +9,7 @@ using CareFlow.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using CareFlow.Domain.Enums;
 
 namespace CareFlow.Infrastructure.Services;
 
@@ -42,10 +43,9 @@ public class AuthService : IAuthService
         var user = new User
         {
             Name = request.Name,
-
             Email = request.Email,
-
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            Role = UserRole.User
         };
 
         _context.Users.Add(user);
@@ -80,12 +80,11 @@ public class AuthService : IAuthService
     private AuthResponseDto GenerateToken(User user)
     {
         var claims = new[]
-        {
+         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-
             new Claim(ClaimTypes.Email, user.Email),
-
-            new Claim(ClaimTypes.Name, user.Name)
+            new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var key = new SymmetricSecurityKey(

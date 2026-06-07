@@ -71,11 +71,11 @@ public class AppointmentService : IAppointmentService
             a.AppointmentDate <= dto.AppointmentDate.AddMinutes(30));
 
         if (conflict)
-            throw new Exception(
+            throw new ConflictException(
                 "Já existe uma consulta agendada para este médico neste horário.");
 
         if (dto.AppointmentDate < DateTime.UtcNow.AddHours(1))
-            throw new Exception(
+            throw new ValidationException(
                 "Consultas devem ser agendadas com pelo menos 1 hora de antecedência.");
 
         var appointment = new Appointment
@@ -123,7 +123,7 @@ public class AppointmentService : IAppointmentService
             throw new NotFoundException("Consulta não encontrada");
 
         if (appointment.Status != AppointmentStatus.Scheduled)
-            throw new Exception("Somente consultas agendadas podem ser confirmadas");
+            throw new ValidationException("Somente consultas agendadas podem ser confirmadas");
 
         appointment.Status = AppointmentStatus.Confirmed;
 
@@ -135,7 +135,7 @@ public class AppointmentService : IAppointmentService
         var appointment = await _context.Appointments.FindAsync(id);
 
         if (appointment.Status != AppointmentStatus.Confirmed)
-            throw new Exception("Consulta precisa estar confirmada");
+            throw new ValidationException("Consulta precisa estar confirmada");
 
         appointment.Status = AppointmentStatus.InProgress;
 
@@ -147,7 +147,7 @@ public class AppointmentService : IAppointmentService
         var appointment = await _context.Appointments.FindAsync(id);
 
         if (appointment.Status != AppointmentStatus.InProgress)
-            throw new Exception("Consulta precisa estar em andamento");
+            throw new ValidationException("Consulta precisa estar em andamento");
 
         appointment.Status = AppointmentStatus.Completed;
 
@@ -160,7 +160,7 @@ public class AppointmentService : IAppointmentService
 
         if (appointment.AppointmentDate < DateTime.UtcNow.AddHours(2))
         {
-            throw new Exception(
+            throw new ValidationException(
                 "Cancelamento deve ocorrer com pelo menos 2 horas de antecedência.");
         }
 

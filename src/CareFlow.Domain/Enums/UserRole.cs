@@ -2,8 +2,8 @@ namespace CareFlow.Domain.Enums;
 
 public enum UserRole
 {
+    User = 0,
     Admin = 1,
-    Nurse = 2,
-    Caregiver = 3,
-    Doctor = 4
+    Doctor = 2,
+    Recepcionist = 3
 }

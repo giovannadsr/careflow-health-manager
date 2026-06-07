@@ -7,6 +7,7 @@ using CareFlow.Application.Interfaces;
 using CareFlow.Infrastructure.Services;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
+using CareFlow.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,6 +101,8 @@ builder.Services.AddEndpointsApiExplorer();
 
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Swagger
 if (app.Environment.IsDevelopment())

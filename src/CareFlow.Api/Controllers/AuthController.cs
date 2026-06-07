@@ -16,8 +16,8 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    [HttpPost("register")]
     [AllowAnonymous]
+    [HttpPost("register")]
     public async Task<IActionResult> Register(
         RegisterRequestDto request)
     {
@@ -26,8 +26,8 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    [HttpPost("login")]
     [AllowAnonymous]
+    [HttpPost("login")]
     public async Task<IActionResult> Login(
         LoginRequestDto request)
     {

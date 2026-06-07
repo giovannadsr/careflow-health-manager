@@ -11,7 +11,7 @@ public class User : BaseEntity
 
     public string PasswordHash { get; set; } = string.Empty;
 
-    public UserRole Role { get; set; }
+    public UserRole Role { get; set; } = UserRole.User;
 
     // Relacionamento
     public ICollection<TaskItem> Tasks { get; set; }
