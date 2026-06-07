@@ -1,13 +1,16 @@
-#  CareFlow Health Manager
+const fs = require('fs');
+
+const readme = `# CareFlow Health Manager
 
 <div align="center">
 
-![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)
-![C#](https://img.shields.io/badge/C%23-11.0-239120?style=for-the-badge&logo=csharp)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-12.0-239120?style=for-the-badge&logo=csharp)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
 ![Swagger](https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 ![Clean Architecture](https://img.shields.io/badge/Architecture-Clean-orange?style=for-the-badge)
+![xUnit](https://img.shields.io/badge/Tests-xUnit_+_Moq-512BD4?style=for-the-badge)
 
 **Sistema de gestão de saúde com API RESTful, autenticação JWT, Clean Architecture e banco de dados PostgreSQL em Docker.**
 
@@ -15,16 +18,16 @@
 
 ---
 
-##  Índice
+## Índice
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Tecnologias](#tecnologias)
 - [Arquitetura](#arquitetura)
-- [Funcionalidades](#funcionalidades)
+- [Entidades do Domínio](#entidades-do-domínio)
+- [Funcionalidades e Endpoints](#funcionalidades-e-endpoints)
 - [Pré-requisitos](#pré-requisitos)
 - [Instalação e Execução](#instalação-e-execução)
 - [Documentação da API (Swagger)](#documentação-da-api-swagger)
-- [Endpoints Principais](#endpoints-principais)
 - [Autenticação](#autenticação)
 - [Testes](#testes)
 - [Estrutura do Projeto](#estrutura-do-projeto)
@@ -35,312 +38,305 @@
 
 ---
 
-##  Sobre o Projeto
+## Sobre o Projeto
 
-O **CareFlow Health Manager** é um sistema de gerenciamento de saúde desenvolvido para clínicas e consultórios médicos. Centraliza o gerenciamento de pacientes, médicos, agendamentos de consultas e prontuários eletrônicos por meio de uma API RESTful segura e bem documentada.
+O **CareFlow Health Manager** é um sistema de gerenciamento de saúde desenvolvido para clínicas e consultórios médicos. Centraliza o gerenciamento de pacientes, médicos e agendamentos de consultas por meio de uma API RESTful segura e bem documentada.
 
-### Principais objetivos:
-- Digitalizar e centralizar registros de saúde
-- Eliminar conflitos de agendamento com validações automáticas
+### Principais objetivos
+- Digitalizar e centralizar registros de pacientes e médicos
+- Validar conflitos de agendamento automaticamente (janela de 30 minutos)
 - Garantir segurança de dados com autenticação JWT e controle de acesso baseado em papéis (RBAC)
-- Conformidade com a LGPD — dados sensíveis tratados adequadamente
+- Fornecer rastreabilidade de consultas por fluxo de status
 
 ---
 
-##  Tecnologias
+## Tecnologias
 
 | Camada | Tecnologia |
 |--------|-----------|
-| **Backend** | C# 11 com .NET 8 |
-| **ORM** | Entity Framework Core 8 |
+| **Backend** | C# com .NET 10 |
+| **ORM** | Entity Framework Core 10 (Npgsql) |
 | **Banco de Dados** | PostgreSQL 16 (Docker) |
-| **Autenticação** | JWT Bearer + BCrypt |
-| **Documentação** | Swagger / OpenAPI 3.0 |
-| **Testes** | xUnit + Moq |
+| **Autenticação** | JWT Bearer + BCrypt.Net-Next v4.2 |
+| **Documentação** | Swagger / OpenAPI 3.0 (Swashbuckle 6.6) |
+| **Testes** | xUnit 2.9 + Moq 4.20 |
 | **Containerização** | Docker + Docker Compose |
 | **Arquitetura** | Clean Architecture |
 
 ---
 
-##  Arquitetura
+## Arquitetura
 
 O projeto segue o padrão **Clean Architecture** com separação clara de responsabilidades:
 
-```
+\`\`\`
 CareFlow/
 ├── src/
-│   ├── CareFlow.Domain/          # Entidades, interfaces, regras de negócio
-│   ├── CareFlow.Application/     # Casos de uso, DTOs, serviços, validadores
-│   ├── CareFlow.Infrastructure/  # EF Core, repositórios, migrations
-│   └── CareFlow.Api/             # Controllers, DI, Swagger, middlewares
+│   ├── CareFlow.Domain/          # Entidades, enums, exceções de domínio
+│   ├── CareFlow.Application/     # Interfaces, DTOs
+│   ├── CareFlow.Infrastructure/  # EF Core, serviços, migrations
+│   └── CareFlow.Api/             # Controllers, Swagger, middleware, DI
 └── tests/
-    └── CareFlow.Tests/           # Testes unitários e de integração (xUnit)
-```
+    └── CareFlow.Tests/           # Testes unitários (xUnit + Moq)
+\`\`\`
 
-**Regra de dependência:** as dependências sempre apontam para dentro — `Api → Application → Domain ← Infrastructure`.
+**Regra de dependência:** \`Api → Application ← Infrastructure → Domain\`
 
-### Detalhamento das camadas:
+### Camadas
 
-**`CareFlow.Domain`**
-- Entidades: `Patient`, `Doctor`, `Appointment`, `MedicalRecord`, `User`
-- Interfaces: `IPatientRepository`, `IDoctorRepository`, `IAppointmentRepository`, etc.
-- Regras de negócio puras (sem dependências externas)
-- Enumerações: `AppointmentStatus`, `UserRole`
+**\`CareFlow.Domain\`**
+- Entidades: \`Patient\`, \`Doctor\`, \`Appointment\`, \`User\`, \`TaskItem\`
+- Base: \`BaseEntity\` (Id + CreatedAt)
+- Enums: \`AppointmentStatus\`, \`UserRole\`, \`TaskItemStatus\`, \`TaskPriority\`
+- Exceções de domínio: \`NotFoundException\`, \`ConflictException\`, \`ValidationException\`
 
-**`CareFlow.Application`**
-- Casos de uso e serviços de aplicação
-- DTOs (Request/Response)
-- Validadores (FluentValidation)
-- Mapeamentos (AutoMapper)
+**\`CareFlow.Application\`**
+- Interfaces de serviço: \`IAuthService\`, \`IPatientService\`, \`IDoctorService\`, \`IAppointmentService\`
+- DTOs de request/response para todas as entidades principais
 
-**`CareFlow.Infrastructure`**
-- `CareFlowDbContext` (Entity Framework Core)
-- Implementações de repositórios
-- Migrations
-- Configurações de entidades (Fluent API)
+**\`CareFlow.Infrastructure\`**
+- \`AppDbContext\` (Entity Framework Core com Npgsql)
+- Implementações: \`AuthService\`, \`PatientService\`, \`DoctorService\`, \`AppointmentService\`
+- Migrations EF Core (5 migrations: InitialCreate → UpdatePatientFields → AddDoctors → AppointmentStatusEnum → AddUserRole)
 
-**`CareFlow.Api`**
-- Controllers REST
-- Configuração de injeção de dependência
-- Swagger/OpenAPI
-- Middleware global de tratamento de erros
-- Autenticação/autorização JWT
+**\`CareFlow.Api\`**
+- Controllers: \`AuthController\`, \`PatientsController\`, \`DoctorsController\`, \`AppointmentsController\`
+- Middleware global de exceções: \`ExceptionMiddleware\`
+- Configuração JWT + Swagger com autenticação Bearer
 
 ---
 
-##  Funcionalidades
+## Entidades do Domínio
 
-###  Autenticação
-- Login com e-mail e senha
-- Token JWT com expiração de 24 horas
-- Refresh de token
-- Senhas com hash BCrypt (fator 12)
+### Patient
+| Campo | Tipo | Observação |
+|-------|------|------------|
+| Id | Guid | PK |
+| FullName | string | Nome completo |
+| BirthDate | DateTime | Data de nascimento |
+| Gender | string | Gênero |
+| CPF | string | Único (índice único no banco) |
+| MedicalRecordNumber | string | Número do prontuário |
+| Diagnosis | string | Diagnóstico |
+| PhoneNumber | string | Telefone |
+| EmergencyContact | string | Contato de emergência |
+| CreatedAt | DateTime | Data de criação (UTC) |
 
-###  Gestão de Pacientes (CRUD completo)
-- Cadastro com CPF único
-- Busca por ID, CPF ou nome
-- Listagem paginada com filtros
-- Atualização de dados
-- Soft delete (inativação)
+### Doctor
+| Campo | Tipo | Observação |
+|-------|------|------------|
+| Id | Guid | PK (gerado no construtor) |
+| FullName | string | Nome completo |
+| CRM | string | Único (índice único no banco) |
+| Specialty | string | Especialidade |
+| IsActive | bool | Ativo (default: true) |
 
-###  Gestão de Médicos (CRUD completo)
-- Cadastro com CRM único
-- Filtro por especialidade
-- Gerenciamento de disponibilidade
+### Appointment
+| Campo | Tipo | Observação |
+|-------|------|------------|
+| Id | Guid | PK |
+| PatientId | Guid | FK → Patient |
+| DoctorId | Guid | FK → Doctor |
+| AppointmentDate | DateTime | Data/hora da consulta |
+| Status | AppointmentStatus | Scheduled (default) |
+| Notes | string? | Observações (nullable) |
 
-###  Agendamento de Consultas (CRUD completo)
-- Validação automática de conflitos de horário
-- Intervalo mínimo de 30 minutos entre consultas
-- Agendamento com antecedência mínima de 1 hora
-- Cancelamento com justificativa obrigatória
-- Fluxo de status: `Scheduled → Confirmed → InProgress → Completed | Cancelled | NoShow`
+### User
+| Campo | Tipo | Observação |
+|-------|------|------------|
+| Id | Guid | PK (BaseEntity) |
+| Name | string | Nome |
+| Email | string | Único (índice único no banco) |
+| PasswordHash | string | Hash BCrypt |
+| Role | UserRole | User (default) |
+| Tasks | ICollection\\<TaskItem\\> | Tarefas atribuídas |
+| CreatedAt | DateTime | BaseEntity |
 
-###  Prontuário Eletrônico (CRUD completo)
-- Registro vinculado à consulta
-- Imutabilidade garantida (sem delete)
-- Correções via novo registro referenciado
-- Histórico completo por paciente
+### AppointmentStatus (enum)
+\`Scheduled → Confirmed → InProgress → Completed | Cancelled | NoShow\`
 
-###  Controle de Acesso (RBAC)
-| Recurso | Admin | Médico | Recepcionista |
-|---------|-------|--------|---------------|
-| Gerenciar Usuários | ✅ | ❌ | ❌ |
-| CRUD Pacientes | ✅ | 🔍 | ✅ |
-| CRUD Médicos | ✅ | 🔍 | 🔍 |
-| CRUD Consultas | ✅ | ✅ | ✅ |
-| Prontuário (escrita) | ❌ | ✅ | ❌ |
-| Prontuário (leitura) | ✅ | ✅ | ❌ |
+### UserRole (enum)
+\`User (0) | Admin (1) | Doctor (2) | Recepcionist (3)\`
 
 ---
 
-##  Pré-requisitos
+## Funcionalidades e Endpoints
 
-Antes de começar, certifique-se de ter instalado:
+### Autenticação — \`/api/auth\`
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (para o banco de dados)
+| Método | Rota | Acesso | Descrição |
+|--------|------|--------|-----------|
+| POST | \`/api/auth/register\` | Público | Registra novo usuário (role padrão: User) |
+| POST | \`/api/auth/login\` | Público | Login — retorna JWT |
+
+### Pacientes — \`/api/patients\`
+
+| Método | Rota | Roles | Descrição |
+|--------|------|-------|-----------|
+| GET | \`/api/patients\` | Admin, Doctor, Recepcionist | Listar todos |
+| GET | \`/api/patients/{id}\` | Admin, Doctor, Recepcionist | Buscar por ID |
+| POST | \`/api/patients\` | Admin, Recepcionist | Cadastrar |
+| PUT | \`/api/patients/{id}\` | Admin, Recepcionist | Atualizar (FullName, Diagnosis) |
+| DELETE | \`/api/patients/{id}\` | Admin | Remover |
+
+### Médicos — \`/api/doctors\`
+
+| Método | Rota | Roles | Descrição |
+|--------|------|-------|-----------|
+| GET | \`/api/doctors\` | Admin, Recepcionist | Listar todos |
+| GET | \`/api/doctors/{id}\` | Admin, Recepcionist | Buscar por ID |
+| POST | \`/api/doctors\` | Admin | Cadastrar (CRM único) |
+| PUT | \`/api/doctors/{id}\` | Admin | Atualizar (FullName, Specialty, IsActive) |
+| DELETE | \`/api/doctors/{id}\` | Admin | Remover |
+
+### Consultas — \`/api/appointments\`
+
+| Método | Rota | Roles | Descrição |
+|--------|------|-------|-----------|
+| GET | \`/api/appointments\` | Admin, Doctor, Recepcionist | Listar todas |
+| GET | \`/api/appointments/{id}\` | Admin, Doctor, Recepcionist | Buscar por ID |
+| POST | \`/api/appointments\` | Admin, Recepcionist | Agendar (valida conflito e antecedência) |
+| PUT | \`/api/appointments/{id}\` | Admin, Recepcionist | Atualizar data/notas |
+| PATCH | \`/api/appointments/{id}/confirm\` | Admin, Recepcionist | Confirmar (Scheduled → Confirmed) |
+| PATCH | \`/api/appointments/{id}/start\` | Admin, Doctor | Iniciar (Confirmed → InProgress) |
+| PATCH | \`/api/appointments/{id}/complete\` | Admin, Doctor | Concluir (InProgress → Completed) |
+| PATCH | \`/api/appointments/{id}/cancel\` | Admin, Recepcionist | Cancelar (min. 2h de antecedência) |
+| DELETE | \`/api/appointments/{id}\` | Admin | Remover permanentemente |
+
+---
+
+## Pré-requisitos
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - [Git](https://git-scm.com/)
 
 ---
 
-##  Instalação e Execução
+## Instalação e Execução
 
 ### 1. Clone o repositório
 
-```bash
+\`\`\`bash
 git clone https://github.com/giovannadsr/careflow-health-manager.git
 cd careflow-health-manager
-```
+\`\`\`
 
 ### 2. Inicie o banco de dados PostgreSQL via Docker
 
-```bash
+\`\`\`bash
 docker-compose up -d
-```
+\`\`\`
 
-Isso sobe um container PostgreSQL 16 na porta **5440**.
+Sobe um container **PostgreSQL 16** na porta **5440** (mapeado para 5432 interno).
 
-Verifique que está rodando:
-
-```bash
+Verifique:
+\`\`\`bash
 docker ps
-# Deve mostrar: careflow-postgres (running)
-```
+# careflow-postgres   Up
+\`\`\`
 
-### 3. Aplique as migrations do banco de dados
+### 3. Aplique as migrations
 
-```bash
+\`\`\`bash
 dotnet ef database update --project src/CareFlow.Infrastructure --startup-project src/CareFlow.Api
-```
+\`\`\`
 
 ### 4. Execute a aplicação
 
-```bash
+\`\`\`bash
 dotnet run --project src/CareFlow.Api
-```
+\`\`\`
 
-A API estará disponível em: **http://localhost:5000**
+A API estará em: **http://localhost:5108** (configuração padrão do launchSettings).
 
 ---
 
-##  Documentação da API (Swagger)
+## Documentação da API (Swagger)
 
 Com a aplicação rodando, acesse:
 
-```
+\`\`\`
 http://localhost:5108/swagger
-```
+\`\`\`
 
-O Swagger UI permite:
-- Visualizar todos os endpoints documentados
-- Testar requisições diretamente no browser
-- Autenticar com token JWT (botão **Authorize**)
-- Ver modelos de request/response com exemplos
+### Autenticando no Swagger
 
-### Autenticando no Swagger:
-1. Use `POST /api/v1/auth/login` com as credenciais
-2. Copie o `token` da resposta
-3. Clique em **Authorize** no Swagger
-4. Insira: `Bearer {seu_token}`
+1. \`POST /api/auth/register\` — crie um usuário
+2. \`POST /api/auth/login\` — faça login e copie o \`token\`
+3. Clique em **Authorize** e insira: \`Bearer {seu_token}\`
 
 ---
 
-##  Endpoints Principais
+## Autenticação
 
-### Autenticação
-```
-POST   /api/v1/auth/login          # Login — retorna JWT
-POST   /api/v1/auth/refresh-token  # Renova o token
-```
+O sistema usa **JWT Bearer Token**. Todas as rotas exceto \`/api/auth/register\` e \`/api/auth/login\` requerem autenticação.
 
-### Pacientes
-```
-GET    /api/v1/patients            # Listar (paginado, com filtros)
-GET    /api/v1/patients/{id}       # Buscar por ID
-GET    /api/v1/patients/cpf/{cpf}  # Buscar por CPF
-POST   /api/v1/patients            # Cadastrar paciente
-PUT    /api/v1/patients/{id}       # Atualizar dados
-DELETE /api/v1/patients/{id}       # Inativar (soft delete)
-```
+### Exemplo de registro
 
-### Médicos
-```
-GET    /api/v1/doctors             # Listar (filtro por especialidade)
-GET    /api/v1/doctors/{id}        # Buscar por ID
-POST   /api/v1/doctors             # Cadastrar médico
-PUT    /api/v1/doctors/{id}        # Atualizar dados
-DELETE /api/v1/doctors/{id}        # Inativar
-```
-
-### Consultas
-```
-GET    /api/v1/appointments              # Listar consultas (filtros: data, médico, status)
-GET    /api/v1/appointments/{id}         # Buscar consulta
-GET    /api/v1/appointments/doctor/{id}  # Agenda do médico
-GET    /api/v1/appointments/patient/{id} # Histórico do paciente
-POST   /api/v1/appointments              # Agendar consulta
-PUT    /api/v1/appointments/{id}         # Atualizar dados
-PATCH  /api/v1/appointments/{id}/cancel  # Cancelar consulta
-PATCH  /api/v1/appointments/{id}/confirm # Confirmar consulta
-PATCH  /api/v1/appointments/{id}/complete# Concluir consulta
-```
-
-### Prontuário
-```
-GET    /api/v1/medical-records/patient/{id}     # Histórico do paciente
-GET    /api/v1/medical-records/{id}             # Buscar registro
-POST   /api/v1/medical-records                  # Criar registro
-POST   /api/v1/medical-records/{id}/correction  # Criar correção
-```
-
----
-
-##  Autenticação
-
-O sistema usa **JWT Bearer Token**. Todas as rotas exceto `/api/v1/auth/login` requerem o token.
-
-### Exemplo de login:
-
-```json
-POST /api/v1/auth/login
+\`\`\`json
+POST /api/auth/register
 {
-  "email": "admin@careflow.com",
-  "password": "Admin@123"
+  "name": "João Silva",
+  "email": "joao@example.com",
+  "password": "senha123"
 }
-```
+\`\`\`
+
+### Exemplo de login
+
+\`\`\`json
+POST /api/auth/login
+{
+  "email": "joao@example.com",
+  "password": "senha123"
+}
+\`\`\`
 
 **Resposta:**
-```json
+\`\`\`json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresAt": "2025-05-28T14:00:00Z",
-  "user": {
-    "id": "...",
-    "email": "admin@careflow.com",
-    "role": "Admin"
-  }
+  "expiresAt": "2026-06-07T20:00:00Z"
 }
-```
+\`\`\`
 
-### Usando o token:
-```http
+O token expira em **60 minutos** (configurável em \`Jwt:ExpiresInMinutes\`).
+
+### Usando o token nas requisições
+
+\`\`\`http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+\`\`\`
 
 ---
 
-##  Testes
+## Testes
 
-Execute todos os testes:
-
-```bash
+\`\`\`bash
 dotnet test
-```
+\`\`\`
 
-Execute com relatório de cobertura:
-
-```bash
+Com cobertura:
+\`\`\`bash
 dotnet test --collect:"XPlat Code Coverage"
-```
+\`\`\`
 
-### Casos de teste implementados (≥5):
+### Casos de teste implementados
 
-| # | Caso de Teste | Camada |
-|---|---------------|--------|
-| 1 | `LoginWithValidCredentials_ReturnsJwtToken` | Application |
-| 2 | `LoginWithInvalidPassword_ThrowsUnauthorizedException` | Application |
-| 3 | `CreatePatient_WithDuplicateCPF_ThrowsConflictException` | Domain |
-| 4 | `ScheduleAppointment_WithConflict_ThrowsConflictException` | Domain |
-| 5 | `ScheduleAppointment_WithLessThan1HourNotice_ThrowsValidationException` | Domain |
-| 6 | `CancelAppointment_WithJustification_UpdatesStatus` | Application |
-| 7 | `MedicalRecord_CannotBeDeleted_ThrowsException` | Domain |
-| 8 | `GetPatientById_WithInvalidId_Returns404` | Api (Integration) |
+| # | Arquivo | Teste | Cenário |
+|---|---------|-------|---------|
+| 1 | \`Auth/AuthServiceTests.cs\` | \`Login_WithValidCredentials_ShouldReturnToken\` | Token não pode ser nulo/vazio |
+| 2 | \`Patients/PatientServiceTests.cs\` | \`CreatePatient_WithDuplicateCpf_ShouldThrowException\` | CPF duplicado lança exceção |
+| 3 | \`Appointments/AppointmentServiceTests.cs\` | \`ScheduleAppointment_WithLessThanOneHour_ShouldThrowException\` | Agendamento < 1h lança exceção |
+| 4 | \`Appointments/AppointmentServiceTests.cs\` | \`ScheduleAppointment_WithConflict_ShouldThrowException\` | Conflito de horário lança exceção |
+| 5 | \`Appointments/AppointmentServiceTests.cs\` | \`ConfirmAppointment_ShouldChangeStatus\` | Confirmação altera status para Confirmed |
 
 ---
 
-##  Estrutura do Projeto
+## Estrutura do Projeto
 
-```
+\`\`\`
 careflow-health-manager/
 │
 ├── src/
@@ -349,185 +345,178 @@ careflow-health-manager/
 │   │   │   ├── AuthController.cs
 │   │   │   ├── PatientsController.cs
 │   │   │   ├── DoctorsController.cs
-│   │   │   ├── AppointmentsController.cs
-│   │   │   └── MedicalRecordsController.cs
-│   │   ├── Middlewares/
-│   │   │   └── GlobalExceptionMiddleware.cs
-│   │   ├── Extensions/
-│   │   │   ├── SwaggerExtensions.cs
-│   │   │   └── AuthExtensions.cs
+│   │   │   └── AppointmentsController.cs
+│   │   ├── Middleware/
+│   │   │   └── ExceptionMiddleware.cs
+│   │   ├── appsettings.json
 │   │   └── Program.cs
 │   │
 │   ├── CareFlow.Application/
-│   │   ├── Services/
-│   │   │   ├── AuthService.cs
-│   │   │   ├── PatientService.cs
-│   │   │   ├── DoctorService.cs
-│   │   │   ├── AppointmentService.cs
-│   │   │   └── MedicalRecordService.cs
 │   │   ├── DTOs/
-│   │   │   ├── Auth/
-│   │   │   ├── Patients/
-│   │   │   ├── Doctors/
-│   │   │   ├── Appointments/
-│   │   │   └── MedicalRecords/
-│   │   └── Validators/
+│   │   │   ├── Auth/         (LoginRequestDto, RegisterRequestDto)
+│   │   │   ├── Appointments/ (CreateAppointmentDto, UpdateAppointmentDto, AppointmentResponseDto)
+│   │   │   ├── Doctors/      (CreateDoctorDto, UpdateDoctorDto, DoctorResponseDto)
+│   │   │   └── (Patients)    (CreatePatientDto, UpdatePatientDto, PatientResponseDto)
+│   │   └── Interfaces/
+│   │       ├── IAuthService.cs
+│   │       ├── IPatientService.cs
+│   │       ├── IDoctorService.cs
+│   │       └── IAppointmentService.cs
 │   │
 │   ├── CareFlow.Domain/
+│   │   ├── Common/
+│   │   │   └── BaseEntity.cs
 │   │   ├── Entities/
-│   │   │   ├── BaseEntity.cs
 │   │   │   ├── Patient.cs
 │   │   │   ├── Doctor.cs
 │   │   │   ├── Appointment.cs
-│   │   │   ├── MedicalRecord.cs
-│   │   │   └── User.cs
+│   │   │   ├── User.cs
+│   │   │   └── TaskItem.cs
 │   │   ├── Enums/
 │   │   │   ├── AppointmentStatus.cs
-│   │   │   └── UserRole.cs
-│   │   ├── Exceptions/
-│   │   │   ├── ConflictException.cs
-│   │   │   ├── NotFoundException.cs
-│   │   │   └── ValidationException.cs
-│   │   └── Interfaces/
-│   │       ├── IPatientRepository.cs
-│   │       ├── IDoctorRepository.cs
-│   │       ├── IAppointmentRepository.cs
-│   │       └── IMedicalRecordRepository.cs
+│   │   │   ├── UserRole.cs
+│   │   │   ├── TaskItemStatus.cs
+│   │   │   └── TaskPriority.cs
+│   │   └── Exceptions/
+│   │       ├── ConflictException.cs
+│   │       ├── NotFoundException.cs
+│   │       └── ValidationException.cs
 │   │
 │   └── CareFlow.Infrastructure/
-│       ├── Data/
-│       │   ├── CareFlowDbContext.cs
-│       │   └── Configurations/
-│       ├── Repositories/
-│       │   ├── PatientRepository.cs
-│       │   ├── DoctorRepository.cs
-│       │   ├── AppointmentRepository.cs
-│       │   └── MedicalRecordRepository.cs
+│       ├── Persistence/
+│       │   └── AppDbContext.cs
+│       ├── Services/
+│       │   ├── AuthService.cs
+│       │   ├── PatientService.cs
+│       │   ├── DoctorService.cs
+│       │   └── AppointmentService.cs
 │       └── Migrations/
+│           ├── 20260526124908_InitialCreate
+│           ├── 20260527022009_UpdatePatientFields
+│           ├── 20260530185659_AddDoctors
+│           ├── 20260531025522_AppointmentStatusEnum
+│           └── 20260607033522_AddUserRole
 │
 ├── tests/
 │   └── CareFlow.Tests/
-│       ├── Application/
-│       ├── Domain/
-│       └── Integration/
+│       ├── Auth/
+│       │   └── AuthServiceTests.cs
+│       ├── Appointments/
+│       │   └── AppointmentServiceTests.cs
+│       └── Patients/
+│           └── PatientServiceTests.cs
 │
 ├── docker-compose.yml
-├── CareFlow.slnx
 └── README.md
-```
+\`\`\`
 
 ---
 
-##  Variáveis de Ambiente
+## Variáveis de Ambiente
 
-Configure em `src/CareFlow.Api/appsettings.json` ou via variáveis de ambiente:
+Configure em \`src/CareFlow.Api/appsettings.json\`:
 
-```json
+\`\`\`json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Host=localhost;Port=5440;Database=careflowdb;Username=postgres;Password=postgres"
   },
-  "JwtSettings": {
-    "SecretKey": "sua-chave-secreta-com-no-minimo-32-caracteres",
-    "Issuer": "CareFlow",
-    "Audience": "CareFlowUsers",
-    "ExpirationHours": 24
+  "Jwt": {
+    "Key": "careflow-super-secret-key-123456789",
+    "Issuer": "CareFlow.Api",
+    "Audience": "CareFlow.Client",
+    "ExpiresInMinutes": 60
   }
 }
-```
+\`\`\`
 
->  **Em produção**, nunca commite a chave JWT no repositório. Use variáveis de ambiente ou um serviço de secrets.
+> **Em produção**, nunca commite a chave JWT no repositório. Use variáveis de ambiente ou um serviço de secrets.
 
 ---
 
-##  Docker
+## Docker
 
-### Iniciar banco de dados:
-```bash
+\`\`\`bash
+# Iniciar banco de dados
 docker-compose up -d
-```
 
-### Parar serviços:
-```bash
+# Parar
 docker-compose down
-```
 
-### Parar e remover volumes (cuidado: apaga os dados):
-```bash
+# Parar e remover volumes (apaga dados)
 docker-compose down -v
-```
 
-### Ver logs do PostgreSQL:
-```bash
+# Ver logs
 docker logs careflow-postgres
-```
+\`\`\`
 
-O `docker-compose.yml` configura:
-- **PostgreSQL 16** na porta `5440` (local) → `5432` (container)
-- Volume persistente `postgres_data`
-- Usuário: `postgres`, Senha: `postgres`, Database: `careflowdb`
-
----
-
-##  Regras de Negócio
-
-| Regra | Descrição |
-|-------|-----------|
-| **RN-001** | CPF do paciente deve ser único |
-| **RN-002** | CRM do médico deve ser único |
-| **RN-003** | Consultas: intervalo mínimo de 30 min entre consultas do mesmo médico |
-| **RN-004** | Agendamento com no mínimo 1 hora de antecedência |
-| **RN-005** | Cancelamento com no mínimo 2 horas de antecedência |
-| **RN-006** | Pacientes/médicos: apenas soft delete (inativação) |
-| **RN-007** | Prontuários são imutáveis — correções via novo registro |
-| **RN-008** | Senhas: mínimo 8 chars, maiúscula, minúscula, número e especial |
-| **RN-009** | RBAC: médico só acessa prontuário em escrita |
+O \`docker-compose.yml\` configura:
+- **PostgreSQL 16** na porta \`5440\` → \`5432\` (interno)
+- Volume persistente \`postgres_data\`
+- Credenciais: usuário \`postgres\`, senha \`postgres\`, database \`careflowdb\`
 
 ---
 
-##  Tratamento de Erros
+## Regras de Negócio
 
-Todas as exceções são tratadas pelo middleware global e retornam respostas padronizadas no formato **RFC 7807 (Problem Details)**:
+| Código | Regra | Implementação |
+|--------|-------|---------------|
+| RN-001 | CPF do paciente deve ser único | Índice único em \`AppDbContext\` + exceção de banco |
+| RN-002 | CRM do médico deve ser único | Índice único em \`AppDbContext\` |
+| RN-003 | E-mail do usuário deve ser único | Índice único em \`AppDbContext\` + verificação em \`AuthService\` |
+| RN-004 | Consultas: janela de 30 min entre consultas do mesmo médico | \`AppointmentService.CreateAsync\` → \`ConflictException\` |
+| RN-005 | Agendamento com no mínimo 1 hora de antecedência | \`AppointmentService.CreateAsync\` → \`ValidationException\` |
+| RN-006 | Cancelamento com no mínimo 2 horas de antecedência | \`AppointmentService.CancelAsync\` → \`ValidationException\` |
+| RN-007 | Fluxo de status: Scheduled → Confirmed → InProgress → Completed/Cancelled | \`ConfirmAsync\`, \`StartAsync\`, \`CompleteAsync\`, \`CancelAsync\` |
+| RN-008 | Confirmação exige status Scheduled | \`ConfirmAsync\` → \`ValidationException\` |
+| RN-009 | Início exige status Confirmed | \`StartAsync\` → \`ValidationException\` |
+| RN-010 | Conclusão exige status InProgress | \`CompleteAsync\` → \`ValidationException\` |
+| RN-011 | Senhas armazenadas com hash BCrypt | \`AuthService.RegisterAsync\` |
+| RN-012 | RBAC por roles: Admin / Doctor / Recepcionist / User | \`[Authorize(Roles = "...")]\` nos controllers |
 
-```json
+---
+
+## Tratamento de Erros
+
+Todas as exceções são capturadas pelo \`ExceptionMiddleware\` e retornam JSON padronizado:
+
+\`\`\`json
 {
-  "type": "https://httpstatuses.com/409",
-  "title": "Conflict",
   "status": 409,
-  "detail": "Já existe uma consulta agendada para este médico neste horário.",
-  "traceId": "00-abc123-def456-00"
+  "message": "Já existe uma consulta agendada para este médico neste horário."
 }
-```
+\`\`\`
 
 | Exceção | HTTP Status |
 |---------|-------------|
-| `NotFoundException` | 404 Not Found |
-| `ConflictException` | 409 Conflict |
-| `ValidationException` | 400 Bad Request |
-| `UnauthorizedException` | 401 Unauthorized |
-| `ForbiddenException` | 403 Forbidden |
+| \`NotFoundException\` | 404 Not Found |
+| \`ValidationException\` | 400 Bad Request |
+| \`ConflictException\` | 409 Conflict |
 | Não tratada | 500 Internal Server Error |
 
 ---
 
-##  Contribuição
+## Contribuição
 
-1. Faça um fork do projeto
-2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
-3. Commit: `git commit -m 'feat: adiciona nova funcionalidade'`
-4. Push: `git push origin feature/nova-funcionalidade`
+1. Fork o projeto
+2. \`git checkout -b feature/nova-funcionalidade\`
+3. \`git commit -m 'feat: descrição'\`
+4. \`git push origin feature/nova-funcionalidade\`
 5. Abra um Pull Request
 
 ---
 
-##  Licença
+## Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+MIT. Veja [LICENSE](LICENSE) para detalhes.
 
 ---
 
 <div align="center">
-  Desenvolvido com ❤️ para o projeto CareFlow Health Manager
-  <br>
-  <strong>C# .NET 8 | Clean Architecture | PostgreSQL | Docker</strong>
+  Desenvolvido com ❤️ — CareFlow Health Manager<br>
+  <strong>C# .NET 10 | Clean Architecture | PostgreSQL | Docker</strong>
 </div>
+`;
+
+fs.writeFileSync('/mnt/user-data/outputs/README.md', readme);
+console.log('README written');
