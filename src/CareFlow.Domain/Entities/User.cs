@@ -13,7 +13,4 @@ public class User : BaseEntity
 
     public UserRole Role { get; set; } = UserRole.User;
 
-    // Relacionamento
-    public ICollection<TaskItem> Tasks { get; set; }
-        = new List<TaskItem>();
 }

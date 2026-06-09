@@ -18,8 +18,6 @@ public class AppDbContext : DbContext
 
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
-    public DbSet<TaskItem> Tasks => Set<TaskItem>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
